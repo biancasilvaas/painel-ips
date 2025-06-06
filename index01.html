@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Painel de IPs - Erica Bianca</title>
+  <style>
+    /* Reset básico */
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #121212;
+      color: #eee;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    /* Filtros */
+    .filtros {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .filtros button {
+      background-color: #333;
+      color: #eee;
+      border: none;
+      padding: 10px 15px;
+      margin: 0 5px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.3s ease;
+    }
+    .filtros button:hover {
+      background-color: #555;
+    }
+    .filtros input {
+      margin-left: 10px;
+      padding: 8px 12px;
+      border-radius: 4px;
+      border: none;
+      font-size: 1rem;
+      width: 200px;
+    }
+
+    /* Tabela */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    th, td {
+      padding: 12px 15px;
+      border-bottom: 1px solid #333;
+      text-align: center;
+    }
+    th {
+      background-color: #222;
+    }
+    tr:hover {
+      background-color: #333;
+    }
+    table button {
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.3s ease;
+    }
+    table button.bloquear {
+      background-color: #ff4d4d;
+    }
+    table button:hover {
+      filter: brightness(0.9);
+    }
+
+    /* Botão limpar */
+    .btn-limpar {
+      margin-top: 10px;
+      background-color: #ff4d4d;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .btn-limpar:hover {
+      background-color: #e04343;
+    }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0; top: 0; right: 0; bottom: 0;
+      background-color: rgba(0,0,0,0.7);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background: #222;
+      padding: 20px;
+      border-radius: 8px;
+      color: white;
+      max-width: 400px;
+      width: 90%;
+      position: relative;
+      box-shadow: 0 0 15px #4caf50;
+    }
+    .modal-close {
+      position: absolute;
+      top: 8px;
+      right: 12px;
+      font-size: 24px;
+      cursor: pointer;
+      color: white;
+    }
+
+    /* Gráfico */
+    #graficoIPs {
+      display: block;
+      margin: 0 auto 20px;
+      background: #111;
+      border-radius: 8px;
+      padding: 10px;
+    }
+
+    /* Verificador URL */
+    .verificador-url {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .verificador-url input {
+      padding: 8px 12px;
+      border-radius: 4px;
+      border: none;
+      font-size: 1rem;
+      width: 300px;
+      max-width: 90%;
+      margin-right: 8px;
+    }
+    .verificador-url button {
+      padding: 9px 15px;
+      font-weight: bold;
+      background-color: #4caf50;
+      border: none;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    .verificador-url button:hover {
+      background-color: #45a045;
+    }
+    #resultadoURL {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    /* Rodapé */
+    footer {
+      text-align: center;
+      padding: 15px;
+      background: #111;
+      color: #bbb;
+      font-size: 0.9rem;
+      margin-top: 30px;
+      border-top: 1px solid #333;
+    }
+
+    /* Responsividade */
+    @media (max-width: 600px) {
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+      thead tr {
+        display: none;
+      }
+      tr {
+        margin-bottom: 15px;
+        border: 1px solid #444;
+        border-radius: 8px;
+        padding: 10px;
+      }
+      td {
+        padding-left: 50%;
+        position: relative;
+        text-align: left;
+      }
+      td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 10px;
+        top: 10px;
+        font-weight: bold;
+        color: #aaa;
+      }
+      .filtros input {
+        width: 100%;
+        margin-top: 10px;
+      }
+      .filtros button {
+        margin: 5px 2px;
+        width: 30%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Painel de IPs - Erica Bianca</h1>
+
+  <div class="filtros">
+    <button onclick="filtrarIPs('todos')">Todos</button>
+    <button onclick="filtrarIPs('bloqueados')">Bloqueados</button>
+    <button onclick="filtrarIPs('liberados')">Liberados</button>
+    <input type="text" id="buscaInput" placeholder="Buscar IP" oninput="buscarIP()" />
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>IP</th>
+        <th>Status</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody id="tabelaIPs">
+      <!-- Linhas serão geradas pelo JS -->
+    </tbody>
+  </table>
+
+  <button class="btn-limpar" onclick="limparIPs()">Limpar lista de IPs</button>
+
+  <canvas id="graficoIPs" width="150" height="150"></canvas>
+
+  <div class="verificador-url">
+    <input type="text" id="urlInput" placeholder="Digite uma URL" />
+    <button onclick="verificarURL()">Verificar URL</button>
+    <p id="resultadoURL"></p>
+  </div>
+
+  <!-- Modal detalhes -->
+  <div id="modalDetalhes" class="modal" onclick="fecharModal(event)">
+    <div class="modal-content">
+      <span class="modal-close" onclick="fecharModal(event)">&times;</span>
+      <div id="detalhesConteudo"></div>
+    </div>
+  </div>
+
+  <footer>
+    Desenvolvido por Erica Bianca
+  </footer>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script>
+    // Lista de IPs exemplo inicial
+    let listaIPs = [
+      { ip: "192.168.0.1", bloqueado: false, dataAdicionado: "2025-06-01" },
+      { ip: "10.0.0.5", bloqueado: true, dataAdicionado: "2025-06-02" },
+      { ip: "172.16.5.4", bloqueado: false, dataAdicionado: "2025-06-03" },
+    ];
+
+    let filtroAtual = "todos";
+    let buscaTexto = "";
+
+    // Atualiza tabela com base em filtro e busca
+    function atualizarTabela() {
+      const tbody = document.getElementById("tabelaIPs");
+      tbody.innerHTML = "";
+
+      let listaFiltrada = listaIPs;
+
+      // Filtrar por status
+      if (filtroAtual === "bloqueados") {
+        listaFiltrada = listaIPs.filter(ip => ip.bloqueado);
+      } else if (filtroAtual === "liberados") {
+        listaFiltrada = listaIPs.filter(ip => !ip.bloqueado);
+      }
+
+      // Filtrar por busca
+      if (buscaTexto) {
+        listaFiltrada = listaFiltrada.filter(ip => ip.ip.includes(buscaTexto));
+      }
+
+      if (listaFiltrada.length === 0) {
+        const tr = document.createElement("tr");
+        const td = document.createElement("td");
+        td.colSpan = 3;
+        td.textContent = "Nenhum IP encontrado.";
+        td.style.textAlign = "center";
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        return;
+      }
+
+      for (const ipObj of listaFiltrada) {
+        const tr = document.createElement("tr");
+
+        const tdIP = document.createElement("td");
+        tdIP.setAttribute("data-label", "IP");
+        tdIP.textContent = ipObj.ip;
+
+        const tdStatus = document.createElement("td");
+        tdStatus.setAttribute("data-label", "Status");
+        tdStatus.textContent = ipObj.bloqueado ? "Bloqueado" : "Liberado";
+        tdStatus.style.color = ipObj.bloqueado ? "#ff4d4d" : "#4caf50";
+
+        const tdAcoes = document.createElement("td");
+        tdAcoes.setAttribute("data-label", "Ações");
+
+        // Botão bloquear/desbloquear
+        const btnBloquear = document.createElement("button");
+        btnBloquear.textContent = ipObj.bloqueado ? "Desbloquear" : "Bloquear";
+        btnBloquear.className = ipObj.bloqueado ? "" : "bloquear";
+        btnBloquear.onclick = () => toggleBloqueio(ipObj.ip);
+
+        // Botão detalhes
+        const btnDetalhes = document.createElement("button");
+        btnDetalhes.textContent = "Detalhes";
+        btnDetalhes.style.marginLeft = "8px";
+        btnDetalhes.onclick = () => mostrarDetalhes(ipObj.ip);
+
+        tdAcoes.appendChild(btnBloquear);
+        tdAcoes.appendChild(btnDetalhes);
+
+        tr.appendChild(tdIP);
+        tr.appendChild(tdStatus);
+        tr.appendChild(tdAcoes);
+
+        tbody.appendChild(tr);
+      }
+    }
+
+    function filtrarIPs(tipo) {
+      filtroAtual = tipo;
+      atualizarTabela();
+      atualizarGrafico();
+    }
+
+    function buscarIP() {
+      buscaTexto = document.getElementById("buscaInput").value.trim();
+      atualizarTabela();
+      atualizarGrafico();
+    }
+
+    function toggleBloqueio(ip) {
+      const ipObj = listaIPs.find(obj => obj.ip === ip);
+      if (ipObj) {
+        ipObj.bloqueado = !ipObj.bloqueado;
+        atualizarTabela();
+        atualizarGrafico();
+      }
+    }
+
+    function limparIPs() {
+      if (confirm("Tem certeza que quer limpar toda a lista de IPs?")) {
+        listaIPs.length = 0;
+        atualizarTabela();
+        atualizarGrafico();
+      }
+    }
+
+    // Modal detalhes
+    function mostrarDetalhes(ip) {
+      const ipObj = listaIPs.find(obj => obj.ip === ip);
+      if (!ipObj) return;
+
+      const conteudo = `
+        <strong>IP:</strong> ${ipObj.ip}<br>
+        <strong>Status:</strong> ${ipObj.bloqueado ? "Bloqueado" : "Liberado"}<br>
+        <strong>Data Adicionado:</strong> ${ipObj.dataAdicionado}
+      `;
+      document.getElementById("detalhesConteudo").innerHTML = conteudo;
+      document.getElementById("modalDetalhes").style.display = "flex";
+    }
+
+    function fecharModal(event) {
+      if (event.target.classList.contains("modal") || event.target.classList.contains("modal-close")) {
+        document.getElementById("modalDetalhes").style.display = "none";
+      }
+    }
+
+    // Gráfico com Chart.js
+    let meuGrafico = null;
+    function atualizarGrafico() {
+      const bloqueados = listaIPs.filter(ip => ip.bloqueado).length;
+      const liberados = listaIPs.length - bloqueados;
+
+      const ctx = document.getElementById("graficoIPs").getContext("2d");
+
+      if (meuGrafico) meuGrafico.destroy();
+
+      meuGrafico = new Chart(ctx, {
+        type: "doughnut",
+        data: {
+          labels: ["Bloqueados", "Liberados"],
+          datasets: [{
+            data: [bloqueados, liberados],
+            backgroundColor: ["#ff4d4d", "#4caf50"],
+          }]
+        },
+        options: {
+          responsive: false,
+          plugins: {
+            legend: {
+              labels: { color: "#eee" }
+            }
+          }
+        }
+      });
+    }
+
+    // Verificador de URL simples
+    function verificarURL() {
+      const url = document.getElementById("urlInput").value.trim();
+      const resultado = document.getElementById("resultadoURL");
+
+      if (!url) {
+        resultado.textContent = "Digite uma URL válida.";
+        resultado.style.color = "yellow";
+        return;
+      }
+
+      if (url.startsWith("http://") || url.startsWith("https://")) {
+        resultado.textContent = "URL válida.";
+        resultado.style.color = "#4caf50";
+      } else {
+        resultado.textContent = "URL inválida. Deve começar com http:// ou https://";
+        resultado.style.color = "#f44336";
+      }
+    }
+
+    // Inicialização
+    atualizarTabela();
+    atualizarGrafico();
+  </script>
+</body>
+</html>
